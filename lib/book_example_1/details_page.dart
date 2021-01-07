@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'book.dart';
-import 'book_details_screen.dart';
+import 'details_screen.dart';
 
 class BookDetailsPage extends Page {
   final Book book;

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:navigator2_demo/book/book_route_path.dart';
 
 import 'book.dart';
-import 'book_details_page.dart';
-import 'book_list_screen.dart';
-import '../unknown_screen.dart';
+import 'details_page.dart';
+import 'list_screen.dart';
+import 'route_path.dart';
+import 'unknown_screen.dart';
 
 class BookRouterDelegate extends RouterDelegate<BookRoutePath>
     with ChangeNotifier, PopNavigatorRouterDelegateMixin<BookRoutePath> {

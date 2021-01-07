@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'book_route_information_parser.dart';
-import 'book_router_delegate.dart';
+import 'route_information_parser.dart';
+import 'router_delegate.dart';
 
 class BooksApp extends StatefulWidget {
   @override
