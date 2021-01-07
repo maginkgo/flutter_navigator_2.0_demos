@@ -214,7 +214,7 @@ pages: [
 ],
 ```
 
-Tenga en cuenta que la key de la página está definido por el valor del objeto `Book`. Esto le dice al `Navigator` que este objeto Material`Page` es diferente de otro cuando el objeto `Book` es diferente. Sin un `key` único, el framework no puede determinar cuándo mostrar una animación de transición entre diferentes `Page`.
+Tenga en cuenta que la key de la página está definido por el valor del objeto `Book`. Esto le dice al `Navigator` que este objeto `MaterialPage` es diferente de otro cuando el objeto `Book` es diferente. Sin un `key` único, el framework no puede determinar cuándo mostrar una animación de transición entre diferentes `Page`.
 
 Nota: Si lo prefiere, también puede extender `Page` para personalizar el comportamiento. Por ejemplo, esta página agrega una animación de transición personalizada:
 
