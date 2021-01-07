@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Aprendiendo el nuevo sistema de navegaci&oacute;n y enrutamiento de Flutter</title>
+        <style>
+</style>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.css" integrity="sha384-yFRtMMDnQtDRO8rLpMIKrtPCD5jdktao2TV19YiZYWMDkUR5GQZR/NOVTdquEx1j" crossorigin="anonymous">
+<link href="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.css" rel="stylesheet" type="text/css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/markdown.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/highlight.css">
+<style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, 'Ubuntu', 'Droid Sans', sans-serif;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+        </style>
+        <style>
+.task-list-item { list-style-type: none; } .task-list-item-checkbox { margin-left: -20px; vertical-align: middle; }
+</style>
+        
+        <script src="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.js"></script>
+        
+    </head>
+    <body class="vscode-body vscode-light">
+        <h1 id="aprendiendo-el-nuevo-sistema-de-navegación-y-enrutamiento-de-flutter">Aprendiendo el nuevo sistema de navegación y enrutamiento de Flutter</h1>
+<p>Este artículo explica cómo funciona la nueva API de <code>Navigator</code> y <code>Router</code> en Flutter. Si sigues los documentos de diseño de Flutter, puede que hayas visto estas nuevas funciones denominadas <strong>Navigator 2.0</strong> y <strong>Router</strong>. Exploraremos cómo estas API permiten un control más preciso de las pantallas de tu aplicación y cómo puedes utilizarlas para parsear las rutas.</p>
+<p>Estas nuevas APIs no son <em>breaking changes</em>, simplemente añaden una nueva API declarativa. Antes de Navigator 2.0, era difícil <em>pushear</em> o <em>poppear</em> múltiples páginas, o eliminar una página debajo de la actual. Sin embargo, si estás contento con el funcionamiento actual de <code>Navigator</code>, puedes seguir usándolo de la misma manera (imperativa).</p>
+<p>El <code>Router</code> proporciona la capacidad de manejar las rutas desde la plataforma subyacente y mostrar las páginas apropiadas. En este artículo, el <code>Router</code> está configurado para parsear la URL del navegador para mostrar la página apropiada.</p>
+<p>Este artículo te ayuda a elegir qué patrón de <code>Navigator</code> funciona mejor para tu aplicación, y explica cómo usar Navigator 2.0 para parsear los URLs del navegador y tomar el control total sobre el stack de las páginas que están activas. El ejercicio de este artículo muestra cómo construir una aplicación que maneja rutas entrantes de la plataforma y administra las páginas de su aplicación. El siguiente GIF muestra la aplicación de ejemplo en acción:</p>
+<h2 id="navigator-10">Navigator 1.0</h2>
+<p>Si estás usando Flutter, probablemente estás usando el <code>Navigator</code> y estás familiarizado con los siguientes conceptos:</p>
+<p><code>Navigator</code> - un widget que gestiona un stack de objetos de tipo <code>Route</code>.</p>
+<p><code>Route</code> - un objeto gestionado por un <code>Navigator</code> que representa una pantalla, típicamente implementado por clases como <code>MaterialPageRoute</code>.</p>
+<p>Antes de Navigator 2.0, las rutas eran <em>pusheadas</em> y <em>poppedas</em> en el stack del <code>Navigator</code> con rutas nombradas o anónimas. Las siguientes secciones son un breve resumen de estos dos enfoques.</p>
+<h3 id="rutas-anónimas">Rutas anónimas</h3>
+<p>La mayoría de las aplicaciones para móviles muestran las pantallas una encima de la otra, como un stack. En Flutter, esto es fácil de lograr usando el <code>Navigator</code>.</p>
+<p><code>MaterialApp</code> y <code>CupertinoApp</code> ya utilizan un <code>Navigator</code> por debajo. Puede acceder al navegador utilizando <code>Navigator.of()</code> o mostrar una nueva pantalla utilizando <code>Navigator.push()</code>, y volver a la pantalla anterior con <code>Navigator.pop()</code>:</p>
+<p>Cuando se llama a <code>push()</code>, el widget <code>DetailScreen</code> se coloca encima del widget <code>HomeScreen</code> de esta manera:</p>
+<p>La pantalla anterior (<code>HomeScreen</code>) sigue siendo parte del árbol de widgets, por lo que cualquier objeto <code>State</code> asociado a él permanece activo mientras <code>DetailScreen</code> es visible.</p>
+<h3 id="rutas-nombradas">Rutas nombradas</h3>
+<p>Flutter también soporta rutas con nombre, que se definen en el parámetro <code>routes</code> en <code>MaterialApp</code> o <code>CupertinoApp</code>:</p>
+<p>Estas rutas deben ser predefinidas. Aunque se pueden pasar argumentos a una ruta con nombre, no se pueden parsear los argumentos de la propia ruta. Por ejemplo, si la aplicación se ejecuta en la web, no puedes parsear el ID de una ruta como <code>/details/:id</code>.</p>
+<h3 id="rutas-con-nombre-avanzadas-con-ongenerateroute">Rutas con nombre avanzadas con onGenerateRoute</h3>
+<p>Una forma más flexible de manejar las rutas con nombre es usando <code>onGenerateRoute</code>. Esta API te da la capacidad de manejar todas las rutas:</p>
+<p>Aquí está el ejemplo completo:</p>
+<p>Aquí, la configuración es una instancia de <code>RouteSetings</code>. Los campos <code>name</code> y <code>arguments</code> son los valores que se proporcionaron cuando se llamó <code>Navigator.pushNamed</code>, o lo que <code>initialRute</code> establece.</p>
+<h2 id="navigator-20">Navigator 2.0</h2>
+<p>La API de Navigator 2.0 añade nuevas clases al famework para hacer que las pantallas de la aplicación sean una función del estado de la aplicación y para proporcionar la capacidad de parsear las rutas desde la plataforma subyacente (como las URL de la web). Aquí hay una visión general de las novedades:</p>
+<ul>
+<li>
+<p><code>Page</code> - un objeto inmutable usado para establecer el stack del <code>Navigator</code>.</p>
+</li>
+<li>
+<p><code>Router</code> - configura la lista de pages a ser mostradas por el <code>Navigator</code>. Normalmente esta lista de páginas cambia según la plataforma subyacente, o según el estado de la aplicación.</p>
+</li>
+<li>
+<p><code>RouteInformationParser</code>, que toma el <code>RouteInformation</code> de <code>RouteInformationProvider</code> y lo parsea en un tipo de datos definido por el usuario.</p>
+</li>
+<li>
+<p><code>RouterDelegate</code> - define el comportamiento específico de la aplicación de cómo <code>Router</code> aprende sobre los cambios en el estado de la aplicación y cómo responde a ellos. Su trabajo es escuchar al <code>RouteInformationParser</code> y el estado de las aplicaciones y construir el <code>Navigator</code> con la lista actual de <code>Page</code>.</p>
+</li>
+<li>
+<p><code>BackButtonDispatcher</code> - informa de las pulsaciones del botón de retorno al <code>Router</code>.</p>
+</li>
+</ul>
+<p>El siguiente diagrama muestra cómo interactua <code>RouterDelegate</code>, <code>Router</code>, <code>RouteInformationParser</code>, y el estado de la aplicación:</p>
+<p>Aquí hay un ejemplo de cómo estas piezas interactúan:</p>
+<ol>
+<li>
+<p>Cuando la plataforma emite una nueva ruta (por ejemplo, &quot;<code>books/2</code>&quot;) , el <code>RouteInformationParser</code> lo convierte en un tipo de datos abstractos <code>T</code> que define en su aplicación (por ejemplo, una clase llamada <code>BooksRoutePath</code>).</p>
+</li>
+<li>
+<p>El método <code>setNewRoutePath</code> de <code>RouterDelegate</code> se llama con este tipo de datos, y debe actualizar el estado de la aplicación para reflejar el cambio (por ejemplo, configurando el <code>selectedBookId</code>) y llamar a <code>notifyListeners</code>.</p>
+</li>
+<li>
+<p>Cuando se llama a <code>notifyListeners</code>, le dice a <code>Router</code> que reconstruya el <code>RouterDelegate</code> (usando su método <code>build()</code>)</p>
+</li>
+<li>
+<p><code>RouterDelegate.build()</code> devuelve un nuevo <code>Navigator</code>, cuyas páginas reflejan ahora el cambio de estado de la aplicación (por ejemplo, el <code>selectedBookId</code>).</p>
+</li>
+</ol>
+<h2 id="ejercicio-navigator-20">Ejercicio Navigator 2.0</h2>
+<p>Esta sección te lleva a través de un ejercicio que utiliza la API Navigator 2.0. Terminaremos con una aplicación que puede estar sincronizada con la barra de URL, y manejar las pulsaciones del botón de regreso desde la aplicación y el navegador, como se muestra en el siguiente GIF:</p>
+<p>Para continuar, cambia a master channel, crea un nuevo proyecto Fluter con soporte web, y reemplaza el contenido de <code>lib/main.dart</code> con lo siguiente:</p>
+<pre><code class="language-dart"><div><span class="hljs-keyword">import</span> <span class="hljs-string">&#x27;package:flutter/material.dart&#x27;</span>;
+
+<span class="hljs-keyword">void</span> main() {
+    runApp(BooksApp());
+}
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Book</span> </span>{
+    <span class="hljs-keyword">final</span> <span class="hljs-built_in">String</span> title;
+    <span class="hljs-keyword">final</span> <span class="hljs-built_in">String</span> author;
+
+    Book(<span class="hljs-keyword">this</span>.title, <span class="hljs-keyword">this</span>.author);
+}
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">BooksApp</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">StatefulWidget</span> </span>{
+    <span class="hljs-meta">@override</span>
+    State&lt;StatefulWidget&gt; createState() =&gt; _BooksAppState();
+}
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">_BooksAppState</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">State</span>&lt;<span class="hljs-title">BooksApp</span>&gt; </span>{
+    <span class="hljs-keyword">void</span> initState() {
+        <span class="hljs-keyword">super</span>.initState();
+    }
+
+    <span class="hljs-meta">@override</span>
+    Widget build(BuildContext context) {
+    <span class="hljs-keyword">return</span> MaterialApp(
+        title: <span class="hljs-string">&#x27;Books App&#x27;</span>,
+        home: Navigator(
+            pages: [
+                MaterialPage(
+                    key: ValueKey(<span class="hljs-string">&#x27;BooksListPage&#x27;</span>),
+                    child: Scaffold(),
+                )
+            ],
+            onPopPage: (route, result) =&gt; route.didPop(result),
+        ),
+    );
+    }
+}
+</div></code></pre>
+<h2 id="pages">Pages</h2>
+<p>El <code>Navigator</code> tiene un nuevo argumento pages en su constructor. Si la lista de objetos <code>Page</code> cambia, <code>Navigator</code> actualiza el stack de las rutas para que coincidan. Para ver cómo funciona esto, vamos a construir una aplicación que muestra una lista de libros.</p>
+<p>En <code>_BooksAppState</code>, guarda dos piezas de estado: una lista de libros y el libro seleccionado:</p>
+<pre><code class="language-dart"><div><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">_BooksAppState</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">State</span>&lt;<span class="hljs-title">BooksApp</span>&gt; </span>{
+    <span class="hljs-comment">// New:</span>
+    Book _selectedBook;
+    <span class="hljs-built_in">bool</span> show404 = <span class="hljs-keyword">false</span>;
+    <span class="hljs-built_in">List</span>&lt;Book&gt; books = [
+        Book(<span class="hljs-string">&#x27;Stranger in a Strange Land&#x27;</span>, <span class="hljs-string">&#x27;Robert A. Heinlein&#x27;</span>),
+        Book(<span class="hljs-string">&#x27;Foundation&#x27;</span>, <span class="hljs-string">&#x27;Isaac Asimov&#x27;</span>),
+        Book(<span class="hljs-string">&#x27;Fahrenheit 451&#x27;</span>, <span class="hljs-string">&#x27;Ray Bradbury&#x27;</span>),
+    ];
+
+    <span class="hljs-comment">// ...</span>
+</div></code></pre>
+<p>Luego en <code>_BooksAppState</code>, devuelva un <code>Navigator</code> con una lista de objetos <code>Page</code>:</p>
+<pre><code class="language-dart"><div><span class="hljs-meta">@override</span>
+    Widget build(BuildContext context) {
+        <span class="hljs-keyword">return</span> MaterialApp(
+            title: <span class="hljs-string">&#x27;Books App&#x27;</span>,
+            home: Navigator(
+            pages: [
+                MaterialPage(
+                    key: ValueKey(<span class="hljs-string">&#x27;BooksListPage&#x27;</span>),
+                    child: BooksListScreen(
+                        books: books,
+                        onTapped: _handleBookTapped,
+                    ),
+                ),
+            ],
+            ),
+        );
+    }
+
+<span class="hljs-keyword">void</span> _handleBookTapped(Book book) {
+    setState(() {
+        _selectedBook = book;
+    });
+}
+
+<span class="hljs-comment">// ...</span>
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">BooksListScreen</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">StatelessWidget</span> </span>{
+    <span class="hljs-keyword">final</span> <span class="hljs-built_in">List</span>&lt;Book&gt; books;
+    <span class="hljs-keyword">final</span> ValueChanged&lt;Book&gt; onTapped;
+
+    BooksListScreen({
+        <span class="hljs-meta">@required</span> <span class="hljs-keyword">this</span>.books,
+        <span class="hljs-meta">@required</span> <span class="hljs-keyword">this</span>.onTapped,
+    });
+
+    <span class="hljs-meta">@override</span>
+    Widget build(BuildContext context) {
+        <span class="hljs-keyword">return</span> Scaffold(
+            appBar: AppBar(),
+            body: ListView(
+                children: [
+                <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> book <span class="hljs-keyword">in</span> books)
+                    ListTile(
+                        title: Text(book.title),
+                        subtitle: Text(book.author),
+                        onTap: () =&gt; onTapped(book),
+                    )
+                ],
+            ),
+        );
+    }
+}
+</div></code></pre>
+<p>Como esta aplicación tiene dos pantallas, una lista de libros y una pantalla que muestra los detalles, añada una segunda página (<code>details</code>) si se selecciona un libro (usando <code>collection if</code>):</p>
+<pre><code class="language-dart"><div>pages: [
+    MaterialPage(
+        key: ValueKey(<span class="hljs-string">&#x27;BooksListPage&#x27;</span>),
+        child: BooksListScreen(
+            books: books,
+            onTapped: _handleBookTapped,
+        ),
+    ),
+    <span class="hljs-comment">// New:</span>
+    <span class="hljs-keyword">if</span> (show404)
+        MaterialPage(key: ValueKey(<span class="hljs-string">&#x27;UnknownPage&#x27;</span>), child: UnknownScreen())
+    <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (_selectedBook != <span class="hljs-keyword">null</span>)
+        MaterialPage(
+            key: ValueKey(_selectedBook),
+            child: BookDetailsScreen(book: _selectedBook)
+        )
+],
+</div></code></pre>
+<p>Tenga en cuenta que la key de la página está definido por el valor del objeto <code>Book</code>. Esto le dice al <code>Navigator</code> que este objeto Material<code>Page</code> es diferente de otro cuando el objeto <code>Book</code> es diferente. Sin un <code>key</code> único, el framework no puede determinar cuándo mostrar una animación de transición entre diferentes <code>Page</code>.</p>
+<p>Nota: Si lo prefiere, también puede extender <code>Page</code> para personalizar el comportamiento. Por ejemplo, esta página agrega una animación de transición personalizada:</p>
+<pre><code class="language-dart"><div><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">BookDetailsPage</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Page</span> </span>{
+    <span class="hljs-keyword">final</span> Book book;
+  
+    BookDetailsPage({
+        <span class="hljs-keyword">this</span>.book,
+    }) : <span class="hljs-keyword">super</span>(key: ValueKey(book));
+
+    Route createRoute(BuildContext context) {
+        <span class="hljs-keyword">return</span> PageRouteBuilder(
+            settings: <span class="hljs-keyword">this</span>,
+            pageBuilder: (context, animation, animation2) {
+                <span class="hljs-keyword">final</span> tween = Tween(begin: Offset(<span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>), end: Offset.zero);
+                <span class="hljs-keyword">final</span> curveTween = CurveTween(curve: Curves.easeInOut);
+                <span class="hljs-keyword">return</span> SlideTransition(
+                    position: animation.drive(curveTween).drive(tween),
+                    child: BookDetailsScreen(
+                        key: ValueKey(book),
+                        book: book,
+                    ),
+                );
+            },
+        );
+    }
+}
+</div></code></pre>
+<p>Finalmente, es un error proporcionar un argumento <code>page</code> sin proporcionar también un callback <code>onPopPage</code>. Esta función se llama siempre que se llama <code>Navigator.pop()</code>. Debe utilizarse para actualizar el estado (que determina la lista de páginas), y debe llamar a <code>didPop</code> en la ruta para determinar si el pop tuvo éxito:</p>
+<pre><code class="language-dart"><div>onPopPage: (route, result) {
+    <span class="hljs-keyword">if</span> (!route.didPop(result)) {
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">false</span>;
+    }
+
+    <span class="hljs-comment">// Update the list of pages by setting _selectedBook to null</span>
+    setState(() {
+        _selectedBook = <span class="hljs-keyword">null</span>;
+    });
+
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">true</span>;
+},
+</div></code></pre>
+<p>Es importante comprobar si <code>didPop</code> falla antes de actualizar el estado de la aplicación.</p>
+<p>Usando <code>setState</code> notifica al framework que llame al método <code>build()</code>, que devuelve una lista con una sola página cuando <code>_selectedbook</code> es nulo.</p>
+<p>Aquí está el ejemplo completo:</p>
+<pre><code class="language-dart"><div><span class="hljs-keyword">import</span> <span class="hljs-string">&#x27;package:flutter/material.dart&#x27;</span>;
+
+<span class="hljs-keyword">void</span> main() {
+  runApp(BooksApp());
+}
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Book</span> </span>{
+  <span class="hljs-keyword">final</span> <span class="hljs-built_in">String</span> title;
+  <span class="hljs-keyword">final</span> <span class="hljs-built_in">String</span> author;
+
+  Book(<span class="hljs-keyword">this</span>.title, <span class="hljs-keyword">this</span>.author);
+}
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">BooksApp</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">StatefulWidget</span> </span>{
+  <span class="hljs-meta">@override</span>
+  State&lt;StatefulWidget&gt; createState() =&gt; _BooksAppState();
+}
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">_BooksAppState</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">State</span>&lt;<span class="hljs-title">BooksApp</span>&gt; </span>{
+  Book _selectedBook;
+
+  <span class="hljs-built_in">List</span>&lt;Book&gt; books = [
+    Book(<span class="hljs-string">&#x27;Stranger in a Strange Land&#x27;</span>, <span class="hljs-string">&#x27;Robert A. Heinlein&#x27;</span>),
+    Book(<span class="hljs-string">&#x27;Foundation&#x27;</span>, <span class="hljs-string">&#x27;Isaac Asimov&#x27;</span>),
+    Book(<span class="hljs-string">&#x27;Fahrenheit 451&#x27;</span>, <span class="hljs-string">&#x27;Ray Bradbury&#x27;</span>),
+  ];
+
+  <span class="hljs-meta">@override</span>
+  Widget build(BuildContext context) {
+    <span class="hljs-keyword">return</span> MaterialApp(
+      title: <span class="hljs-string">&#x27;Books App&#x27;</span>,
+      home: Navigator(
+        pages: [
+          MaterialPage(
+            key: ValueKey(<span class="hljs-string">&#x27;BooksListPage&#x27;</span>),
+            child: BooksListScreen(
+              books: books,
+              onTapped: _handleBookTapped,
+            ),
+          ),
+          <span class="hljs-keyword">if</span> (_selectedBook != <span class="hljs-keyword">null</span>) BookDetailsPage(book: _selectedBook)
+        ],
+        onPopPage: (route, result) {
+          <span class="hljs-keyword">if</span> (!route.didPop(result)) {
+            <span class="hljs-keyword">return</span> <span class="hljs-keyword">false</span>;
+          }
+
+          <span class="hljs-comment">// Update the list of pages by setting _selectedBook to null</span>
+          setState(() {
+            _selectedBook = <span class="hljs-keyword">null</span>;
+          });
+
+          <span class="hljs-keyword">return</span> <span class="hljs-keyword">true</span>;
+        },
+      ),
+    );
+  }
+
+  <span class="hljs-keyword">void</span> _handleBookTapped(Book book) {
+    setState(() {
+      _selectedBook = book;
+    });
+  }
+}
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">BookDetailsPage</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Page</span> </span>{
+  <span class="hljs-keyword">final</span> Book book;
+
+  BookDetailsPage({
+    <span class="hljs-keyword">this</span>.book,
+  }) : <span class="hljs-keyword">super</span>(key: ValueKey(book));
+
+  Route createRoute(BuildContext context) {
+    <span class="hljs-keyword">return</span> MaterialPageRoute(
+      settings: <span class="hljs-keyword">this</span>,
+      builder: (BuildContext context) {
+        <span class="hljs-keyword">return</span> BookDetailsScreen(book: book);
+      },
+    );
+  }
+}
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">BooksListScreen</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">StatelessWidget</span> </span>{
+  <span class="hljs-keyword">final</span> <span class="hljs-built_in">List</span>&lt;Book&gt; books;
+  <span class="hljs-keyword">final</span> ValueChanged&lt;Book&gt; onTapped;
+
+  BooksListScreen({
+    <span class="hljs-meta">@required</span> <span class="hljs-keyword">this</span>.books,
+    <span class="hljs-meta">@required</span> <span class="hljs-keyword">this</span>.onTapped,
+  });
+
+  <span class="hljs-meta">@override</span>
+  Widget build(BuildContext context) {
+    <span class="hljs-keyword">return</span> Scaffold(
+      appBar: AppBar(),
+      body: ListView(
+        children: [
+          <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> book <span class="hljs-keyword">in</span> books)
+            ListTile(
+              title: Text(book.title),
+              subtitle: Text(book.author),
+              onTap: () =&gt; onTapped(book),
+            )
+        ],
+      ),
+    );
+  }
+}
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">BookDetailsScreen</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">StatelessWidget</span> </span>{
+  <span class="hljs-keyword">final</span> Book book;
+
+  BookDetailsScreen({
+    <span class="hljs-meta">@required</span> <span class="hljs-keyword">this</span>.book,
+  });
+
+  <span class="hljs-meta">@override</span>
+  Widget build(BuildContext context) {
+    <span class="hljs-keyword">return</span> Scaffold(
+      appBar: AppBar(),
+      body: Padding(
+        padding: <span class="hljs-keyword">const</span> EdgeInsets.all(<span class="hljs-number">8.0</span>),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            <span class="hljs-keyword">if</span> (book != <span class="hljs-keyword">null</span>) ...[
+              Text(book.title, style: Theme.of(context).textTheme.headline6),
+              Text(book.author, style: Theme.of(context).textTheme.subtitle1),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+</div></code></pre>
+<p>Tal como está, esta aplicación sólo nos permite definir el stack de las páginas de forma declarativa. No somos capaces de manejar el botón de regreso de la plataforma, y la URL del navegador no cambia a medida que navegamos.</p>
+<h2 id="router">Router</h2>
+<p>Hasta ahora, la aplicación puede mostrar diferentes páginas, pero no puede manejar las rutas de la plataforma subyacente, por ejemplo si el usuario actualiza la URL en el navegador.</p>
+<p>Esta sección muestra cómo implementar el <code>RouteInformationParser</code>, <code>RouterDelegate</code>, y actualizar el estado de la aplicación. Una vez configurada, la aplicación se mantiene sincronizada con la URL del navegador.</p>
+<h3 id="tipos-de-datos">Tipos de datos</h3>
+<p>El <code>RouteInformationParser</code> parsea la información de la ruta en un tipo de datos definido por el usuario, así que definiremos eso primero:</p>
+<pre><code class="language-dart"><div><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">BookRoutePath</span> </span>{
+  <span class="hljs-keyword">final</span> <span class="hljs-built_in">int</span> id;
+  <span class="hljs-keyword">final</span> <span class="hljs-built_in">bool</span> isUnknown;
+
+  BookRoutePath.home()
+      : id = <span class="hljs-keyword">null</span>,
+        isUnknown = <span class="hljs-keyword">false</span>;
+
+  BookRoutePath.details(<span class="hljs-keyword">this</span>.id) : isUnknown = <span class="hljs-keyword">false</span>;
+
+  BookRoutePath.unknown()
+      : id = <span class="hljs-keyword">null</span>,
+        isUnknown = <span class="hljs-keyword">true</span>;
+
+  <span class="hljs-built_in">bool</span> <span class="hljs-keyword">get</span> isHomePage =&gt; id == <span class="hljs-keyword">null</span>;
+
+  <span class="hljs-built_in">bool</span> <span class="hljs-keyword">get</span> isDetailsPage =&gt; id != <span class="hljs-keyword">null</span>;
+}
+</div></code></pre>
+<p>En esta aplicación, todas las rutas pueden ser representadas usando una sola clase. En su lugar, se puede optar por utilizar diferentes clases que implementen una superclase, o gestionar la información de la ruta de otra manera.</p>
+<h3 id="routerdelegate">RouterDelegate</h3>
+<p>A continuación, agregue una clase que extienda <code>RouterDelegate</code>:</p>
+<pre><code class="language-dart"><div>
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">BookRouterDelegate</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">RouterDelegate</span>&lt;<span class="hljs-title">BookRoutePath</span>&gt;
+    <span class="hljs-title">with</span> <span class="hljs-title">ChangeNotifier</span>, <span class="hljs-title">PopNavigatorRouterDelegateMixin</span>&lt;<span class="hljs-title">BookRoutePath</span>&gt; </span>{
+  <span class="hljs-meta">@override</span>
+  Widget build(BuildContext context) {
+    <span class="hljs-comment">// TODO</span>
+    <span class="hljs-keyword">throw</span> UnimplementedError();
+  }
+
+  <span class="hljs-meta">@override</span>
+  <span class="hljs-comment">// TODO</span>
+  GlobalKey&lt;NavigatorState&gt; <span class="hljs-keyword">get</span> navigatorKey =&gt; <span class="hljs-keyword">throw</span> UnimplementedError();
+
+  <span class="hljs-meta">@override</span>
+  Future&lt;<span class="hljs-keyword">void</span>&gt; setNewRoutePath(BookRoutePath configuration) {
+    <span class="hljs-comment">// TODO</span>
+    <span class="hljs-keyword">throw</span> UnimplementedError();
+  }
+}
+</div></code></pre>
+<p>El tipo genérico definido en <code>RouterDelegate</code> es <code>BookRoutePath</code>, que contiene todos los estados necesarios para decidir qué páginas mostrar.</p>
+<p>Necesitaremos mover algo de lógica de <code>_BooksAppState</code> a <code>BookRouterDelegate</code>, y crear un <code>GlobalKey</code>. En este ejemplo, el estado de la aplicación se almacena directamente en el <code>RouterDelegate</code>, pero también podría separarse en otra clase.</p>
+<pre><code class="language-dart"><div><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">BookRouterDelegate</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">RouterDelegate</span>&lt;<span class="hljs-title">BookRoutePath</span>&gt;
+    <span class="hljs-title">with</span> <span class="hljs-title">ChangeNotifier</span>, <span class="hljs-title">PopNavigatorRouterDelegateMixin</span>&lt;<span class="hljs-title">BookRoutePath</span>&gt; </span>{
+  <span class="hljs-keyword">final</span> GlobalKey&lt;NavigatorState&gt; navigatorKey;
+
+  Book _selectedBook;
+  <span class="hljs-built_in">bool</span> show404 = <span class="hljs-keyword">false</span>;
+
+  <span class="hljs-built_in">List</span>&lt;Book&gt; books = [
+    Book(<span class="hljs-string">&#x27;Stranger in a Strange Land&#x27;</span>, <span class="hljs-string">&#x27;Robert A. Heinlein&#x27;</span>),
+    Book(<span class="hljs-string">&#x27;Foundation&#x27;</span>, <span class="hljs-string">&#x27;Isaac Asimov&#x27;</span>),
+    Book(<span class="hljs-string">&#x27;Fahrenheit 451&#x27;</span>, <span class="hljs-string">&#x27;Ray Bradbury&#x27;</span>),
+  ];
+
+  BookRouterDelegate() : navigatorKey = GlobalKey&lt;NavigatorState&gt;();
+  <span class="hljs-comment">// ...</span>
+</div></code></pre>
+<p>Para mostrar la ruta correcta en la URL, necesitamos devolver un <code>BookRoutePath</code> basado en el estado actual de la aplicación:</p>
+<pre><code class="language-dart"><div>BookRoutePath <span class="hljs-keyword">get</span> currentConfiguration {
+    <span class="hljs-keyword">if</span> (show404) {
+        <span class="hljs-keyword">return</span> BookRoutePath.unknown();
+    }
+
+    <span class="hljs-keyword">return</span> _selectedBook == <span class="hljs-keyword">null</span>
+        ? BookRoutePath.home()
+        : BookRoutePath.details(books.indexOf(_selectedBook));
+}
+</div></code></pre>
+<p>A continuación, el método <code>build()</code> en un <code>RouterDelegate</code> necesita devolver un <code>Navigator</code>:</p>
+<pre><code class="language-dart"><div><span class="hljs-meta">@override</span>
+Widget build(BuildContext context) {
+  <span class="hljs-keyword">return</span> Navigator(
+    key: navigatorKey,
+    pages: [
+      MaterialPage(
+        key: ValueKey(<span class="hljs-string">&#x27;BooksListPage&#x27;</span>),
+        child: BooksListScreen(
+          books: books,
+          onTapped: _handleBookTapped,
+        ),
+      ),
+      <span class="hljs-keyword">if</span> (show404)
+        MaterialPage(key: ValueKey(<span class="hljs-string">&#x27;UnknownPage&#x27;</span>), child: UnknownScreen())
+      <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (_selectedBook != <span class="hljs-keyword">null</span>)
+        BookDetailsPage(book: _selectedBook)
+    ],
+    onPopPage: (route, result) {
+      <span class="hljs-keyword">if</span> (!route.didPop(result)) {
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">false</span>;
+      }
+
+      <span class="hljs-comment">// Update the list of pages by setting _selectedBook to null</span>
+      _selectedBook = <span class="hljs-keyword">null</span>;
+      show404 = <span class="hljs-keyword">false</span>;
+      notifyListeners();
+
+      <span class="hljs-keyword">return</span> <span class="hljs-keyword">true</span>;
+    },
+  );
+}
+</div></code></pre>
+<p>El callback <code>onPopPage</code> ahora utiliza <code>notifyListeners</code> en lugar de <code>setState</code>, ya que esta clase es ahora una <code>ChageNotifier</code>, no un widget. Cuando el <code>RouterDelegate</code> notifica a sus listeners, se le notifica al widget <code>Router</code> que el <code>RuterDelegate</code> del <code>currentConfiguration</code> ha cambiado y que su método <code>build()</code> necesita ser llamado nuevamente para construir un nuevo <code>Navigator</code>.</p>
+<p>El método <code>_handleBookTapped</code> también necesita usar <code>notifyListers</code> en lugar de <code>setState</code>:</p>
+<pre><code class="language-dart"><div><span class="hljs-keyword">void</span> _handleBookTapped(Book book) {
+    _selectedBook = book;
+    notifyListeners();
+}
+</div></code></pre>
+<p>Cuando una nueva ruta ha sido <em>pusheada</em> en la aplicación, <code>Router</code> llama a <code>setNewRoutePath</code>, lo que le da a nuestra aplicación la oportunidad para actualizar el estado de la aplicación basado en los cambios de la ruta:</p>
+<pre><code class="language-dart"><div><span class="hljs-meta">@override</span>
+Future&lt;<span class="hljs-keyword">void</span>&gt; setNewRoutePath(BookRoutePath path) <span class="hljs-keyword">async</span> {
+    <span class="hljs-keyword">if</span> (path.isUnknown) {
+        _selectedBook = <span class="hljs-keyword">null</span>;
+        show404 = <span class="hljs-keyword">true</span>;
+        <span class="hljs-keyword">return</span>;
+    }
+
+    <span class="hljs-keyword">if</span> (path.isDetailsPage) {
+        <span class="hljs-keyword">if</span> (path.id &lt; <span class="hljs-number">0</span> || path.id &gt; books.length - <span class="hljs-number">1</span>) {
+        show404 = <span class="hljs-keyword">true</span>;
+        <span class="hljs-keyword">return</span>;
+        }
+
+        _selectedBook = books[path.id];
+    } <span class="hljs-keyword">else</span> {
+        _selectedBook = <span class="hljs-keyword">null</span>;
+    }
+
+    show404 = <span class="hljs-keyword">false</span>;
+}
+</div></code></pre>
+<h3 id="routeinformationparser">RouteInformationParser</h3>
+<p>El <code>RouteInformationParser</code> proporciona un hook para parsear las rutas de entrada (<code>RouteInformation</code>) y convertirlas en un tipo definido por el usuario (<code>BookRoutePath</code>). Usa la clase <code>Uri</code> para encargarte del parseo:</p>
+<pre><code class="language-dart"><div><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">BookRouteInformationParser</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">RouteInformationParser</span>&lt;<span class="hljs-title">BookRoutePath</span>&gt; </span>{
+  <span class="hljs-meta">@override</span>
+  Future&lt;BookRoutePath&gt; parseRouteInformation(
+      RouteInformation routeInformation) <span class="hljs-keyword">async</span> {
+    <span class="hljs-keyword">final</span> uri = <span class="hljs-built_in">Uri</span>.parse(routeInformation.location);
+    <span class="hljs-comment">// Handle &#x27;/&#x27;</span>
+    <span class="hljs-keyword">if</span> (uri.pathSegments.length == <span class="hljs-number">0</span>) {
+      <span class="hljs-keyword">return</span> BookRoutePath.home();
+    }
+
+    <span class="hljs-comment">// Handle &#x27;/book/:id&#x27;</span>
+    <span class="hljs-keyword">if</span> (uri.pathSegments.length == <span class="hljs-number">2</span>) {
+      <span class="hljs-keyword">if</span> (uri.pathSegments[<span class="hljs-number">0</span>] != <span class="hljs-string">&#x27;book&#x27;</span>) <span class="hljs-keyword">return</span> BookRoutePath.unknown();
+      <span class="hljs-keyword">var</span> remaining = uri.pathSegments[<span class="hljs-number">1</span>];
+      <span class="hljs-keyword">var</span> id = <span class="hljs-built_in">int</span>.tryParse(remaining);
+      <span class="hljs-keyword">if</span> (id == <span class="hljs-keyword">null</span>) <span class="hljs-keyword">return</span> BookRoutePath.unknown();
+      <span class="hljs-keyword">return</span> BookRoutePath.details(id);
+    }
+
+    <span class="hljs-comment">// Handle unknown routes</span>
+    <span class="hljs-keyword">return</span> BookRoutePath.unknown();
+  }
+
+  <span class="hljs-meta">@override</span>
+  RouteInformation restoreRouteInformation(BookRoutePath path) {
+    <span class="hljs-keyword">if</span> (path.isUnknown) {
+      <span class="hljs-keyword">return</span> RouteInformation(location: <span class="hljs-string">&#x27;/404&#x27;</span>);
+    }
+    <span class="hljs-keyword">if</span> (path.isHomePage) {
+      <span class="hljs-keyword">return</span> RouteInformation(location: <span class="hljs-string">&#x27;/&#x27;</span>);
+    }
+    <span class="hljs-keyword">if</span> (path.isDetailsPage) {
+      <span class="hljs-keyword">return</span> RouteInformation(location: <span class="hljs-string">&#x27;/book/<span class="hljs-subst">${path.id}</span>&#x27;</span>);
+    }
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;
+  }
+}
+</div></code></pre>
+<p>Esta implementación es específica de esta aplicación, no una solución de parseo general de rutas. Más sobre eso más adelante.</p>
+<p>Para usar estas nuevas clases, usamos el nuevo constructor <code>MaterialApp.router</code> y pasamos nuestras implementaciones personalizadas:</p>
+<pre><code class="language-dart"><div>    <span class="hljs-keyword">return</span> MaterialApp.router(
+      title: <span class="hljs-string">&#x27;Books App&#x27;</span>,
+      routerDelegate: _routerDelegate,
+      routeInformationParser: _routeInformationParser,
+    );
+</div></code></pre>
+<p>Aquí está el ejemplo completo:</p>
+<pre><code class="language-dart"><div><span class="hljs-keyword">import</span> <span class="hljs-string">&#x27;package:flutter/material.dart&#x27;</span>;
+
+<span class="hljs-keyword">void</span> main() {
+  runApp(BooksApp());
+}
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Book</span> </span>{
+  <span class="hljs-keyword">final</span> <span class="hljs-built_in">String</span> title;
+  <span class="hljs-keyword">final</span> <span class="hljs-built_in">String</span> author;
+
+  Book(<span class="hljs-keyword">this</span>.title, <span class="hljs-keyword">this</span>.author);
+}
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">BooksApp</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">StatefulWidget</span> </span>{
+  <span class="hljs-meta">@override</span>
+  State&lt;StatefulWidget&gt; createState() =&gt; _BooksAppState();
+}
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">_BooksAppState</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">State</span>&lt;<span class="hljs-title">BooksApp</span>&gt; </span>{
+  BookRouterDelegate _routerDelegate = BookRouterDelegate();
+  BookRouteInformationParser _routeInformationParser =
+      BookRouteInformationParser();
+
+  <span class="hljs-meta">@override</span>
+  Widget build(BuildContext context) {
+    <span class="hljs-keyword">return</span> MaterialApp.router(
+      title: <span class="hljs-string">&#x27;Books App&#x27;</span>,
+      routerDelegate: _routerDelegate,
+      routeInformationParser: _routeInformationParser,
+    );
+  }
+}
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">BookRouteInformationParser</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">RouteInformationParser</span>&lt;<span class="hljs-title">BookRoutePath</span>&gt; </span>{
+  <span class="hljs-meta">@override</span>
+  Future&lt;BookRoutePath&gt; parseRouteInformation(
+      RouteInformation routeInformation) <span class="hljs-keyword">async</span> {
+    <span class="hljs-keyword">final</span> uri = <span class="hljs-built_in">Uri</span>.parse(routeInformation.location);
+    <span class="hljs-comment">// Handle &#x27;/&#x27;</span>
+    <span class="hljs-keyword">if</span> (uri.pathSegments.length == <span class="hljs-number">0</span>) {
+      <span class="hljs-keyword">return</span> BookRoutePath.home();
+    }
+
+    <span class="hljs-comment">// Handle &#x27;/book/:id&#x27;</span>
+    <span class="hljs-keyword">if</span> (uri.pathSegments.length == <span class="hljs-number">2</span>) {
+      <span class="hljs-keyword">if</span> (uri.pathSegments[<span class="hljs-number">0</span>] != <span class="hljs-string">&#x27;book&#x27;</span>) <span class="hljs-keyword">return</span> BookRoutePath.unknown();
+      <span class="hljs-keyword">var</span> remaining = uri.pathSegments[<span class="hljs-number">1</span>];
+      <span class="hljs-keyword">var</span> id = <span class="hljs-built_in">int</span>.tryParse(remaining);
+      <span class="hljs-keyword">if</span> (id == <span class="hljs-keyword">null</span>) <span class="hljs-keyword">return</span> BookRoutePath.unknown();
+      <span class="hljs-keyword">return</span> BookRoutePath.details(id);
+    }
+
+    <span class="hljs-comment">// Handle unknown routes</span>
+    <span class="hljs-keyword">return</span> BookRoutePath.unknown();
+  }
+
+  <span class="hljs-meta">@override</span>
+  RouteInformation restoreRouteInformation(BookRoutePath path) {
+    <span class="hljs-keyword">if</span> (path.isUnknown) {
+      <span class="hljs-keyword">return</span> RouteInformation(location: <span class="hljs-string">&#x27;/404&#x27;</span>);
+    }
+    <span class="hljs-keyword">if</span> (path.isHomePage) {
+      <span class="hljs-keyword">return</span> RouteInformation(location: <span class="hljs-string">&#x27;/&#x27;</span>);
+    }
+    <span class="hljs-keyword">if</span> (path.isDetailsPage) {
+      <span class="hljs-keyword">return</span> RouteInformation(location: <span class="hljs-string">&#x27;/book/<span class="hljs-subst">${path.id}</span>&#x27;</span>);
+    }
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;
+  }
+}
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">BookRouterDelegate</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">RouterDelegate</span>&lt;<span class="hljs-title">BookRoutePath</span>&gt;
+    <span class="hljs-title">with</span> <span class="hljs-title">ChangeNotifier</span>, <span class="hljs-title">PopNavigatorRouterDelegateMixin</span>&lt;<span class="hljs-title">BookRoutePath</span>&gt; </span>{
+  <span class="hljs-keyword">final</span> GlobalKey&lt;NavigatorState&gt; navigatorKey;
+
+  Book _selectedBook;
+  <span class="hljs-built_in">bool</span> show404 = <span class="hljs-keyword">false</span>;
+
+  <span class="hljs-built_in">List</span>&lt;Book&gt; books = [
+    Book(<span class="hljs-string">&#x27;Stranger in a Strange Land&#x27;</span>, <span class="hljs-string">&#x27;Robert A. Heinlein&#x27;</span>),
+    Book(<span class="hljs-string">&#x27;Foundation&#x27;</span>, <span class="hljs-string">&#x27;Isaac Asimov&#x27;</span>),
+    Book(<span class="hljs-string">&#x27;Fahrenheit 451&#x27;</span>, <span class="hljs-string">&#x27;Ray Bradbury&#x27;</span>),
+  ];
+
+  BookRouterDelegate() : navigatorKey = GlobalKey&lt;NavigatorState&gt;();
+
+  BookRoutePath <span class="hljs-keyword">get</span> currentConfiguration {
+    <span class="hljs-keyword">if</span> (show404) {
+      <span class="hljs-keyword">return</span> BookRoutePath.unknown();
+    }
+    <span class="hljs-keyword">return</span> _selectedBook == <span class="hljs-keyword">null</span>
+        ? BookRoutePath.home()
+        : BookRoutePath.details(books.indexOf(_selectedBook));
+  }
+
+  <span class="hljs-meta">@override</span>
+  Widget build(BuildContext context) {
+    <span class="hljs-keyword">return</span> Navigator(
+      key: navigatorKey,
+      pages: [
+        MaterialPage(
+          key: ValueKey(<span class="hljs-string">&#x27;BooksListPage&#x27;</span>),
+          child: BooksListScreen(
+            books: books,
+            onTapped: _handleBookTapped,
+          ),
+        ),
+        <span class="hljs-keyword">if</span> (show404)
+          MaterialPage(key: ValueKey(<span class="hljs-string">&#x27;UnknownPage&#x27;</span>), child: UnknownScreen())
+        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (_selectedBook != <span class="hljs-keyword">null</span>)
+          BookDetailsPage(book: _selectedBook)
+      ],
+      onPopPage: (route, result) {
+        <span class="hljs-keyword">if</span> (!route.didPop(result)) {
+          <span class="hljs-keyword">return</span> <span class="hljs-keyword">false</span>;
+        }
+
+        <span class="hljs-comment">// Update the list of pages by setting _selectedBook to null</span>
+        _selectedBook = <span class="hljs-keyword">null</span>;
+        show404 = <span class="hljs-keyword">false</span>;
+        notifyListeners();
+
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">true</span>;
+      },
+    );
+  }
+
+  <span class="hljs-meta">@override</span>
+  Future&lt;<span class="hljs-keyword">void</span>&gt; setNewRoutePath(BookRoutePath path) <span class="hljs-keyword">async</span> {
+    <span class="hljs-keyword">if</span> (path.isUnknown) {
+      _selectedBook = <span class="hljs-keyword">null</span>;
+      show404 = <span class="hljs-keyword">true</span>;
+      <span class="hljs-keyword">return</span>;
+    }
+
+    <span class="hljs-keyword">if</span> (path.isDetailsPage) {
+      <span class="hljs-keyword">if</span> (path.id &lt; <span class="hljs-number">0</span> || path.id &gt; books.length - <span class="hljs-number">1</span>) {
+        show404 = <span class="hljs-keyword">true</span>;
+        <span class="hljs-keyword">return</span>;
+      }
+
+      _selectedBook = books[path.id];
+    } <span class="hljs-keyword">else</span> {
+      _selectedBook = <span class="hljs-keyword">null</span>;
+    }
+
+    show404 = <span class="hljs-keyword">false</span>;
+  }
+
+  <span class="hljs-keyword">void</span> _handleBookTapped(Book book) {
+    _selectedBook = book;
+    notifyListeners();
+  }
+}
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">BookDetailsPage</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Page</span> </span>{
+  <span class="hljs-keyword">final</span> Book book;
+
+  BookDetailsPage({
+    <span class="hljs-keyword">this</span>.book,
+  }) : <span class="hljs-keyword">super</span>(key: ValueKey(book));
+
+  Route createRoute(BuildContext context) {
+    <span class="hljs-keyword">return</span> MaterialPageRoute(
+      settings: <span class="hljs-keyword">this</span>,
+      builder: (BuildContext context) {
+        <span class="hljs-keyword">return</span> BookDetailsScreen(book: book);
+      },
+    );
+  }
+}
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">BookRoutePath</span> </span>{
+  <span class="hljs-keyword">final</span> <span class="hljs-built_in">int</span> id;
+  <span class="hljs-keyword">final</span> <span class="hljs-built_in">bool</span> isUnknown;
+
+  BookRoutePath.home()
+      : id = <span class="hljs-keyword">null</span>,
+        isUnknown = <span class="hljs-keyword">false</span>;
+
+  BookRoutePath.details(<span class="hljs-keyword">this</span>.id) : isUnknown = <span class="hljs-keyword">false</span>;
+
+  BookRoutePath.unknown()
+      : id = <span class="hljs-keyword">null</span>,
+        isUnknown = <span class="hljs-keyword">true</span>;
+
+  <span class="hljs-built_in">bool</span> <span class="hljs-keyword">get</span> isHomePage =&gt; id == <span class="hljs-keyword">null</span>;
+
+  <span class="hljs-built_in">bool</span> <span class="hljs-keyword">get</span> isDetailsPage =&gt; id != <span class="hljs-keyword">null</span>;
+}
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">BooksListScreen</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">StatelessWidget</span> </span>{
+  <span class="hljs-keyword">final</span> <span class="hljs-built_in">List</span>&lt;Book&gt; books;
+  <span class="hljs-keyword">final</span> ValueChanged&lt;Book&gt; onTapped;
+
+  BooksListScreen({
+    <span class="hljs-meta">@required</span> <span class="hljs-keyword">this</span>.books,
+    <span class="hljs-meta">@required</span> <span class="hljs-keyword">this</span>.onTapped,
+  });
+
+  <span class="hljs-meta">@override</span>
+  Widget build(BuildContext context) {
+    <span class="hljs-keyword">return</span> Scaffold(
+      appBar: AppBar(),
+      body: ListView(
+        children: [
+          <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> book <span class="hljs-keyword">in</span> books)
+            ListTile(
+              title: Text(book.title),
+              subtitle: Text(book.author),
+              onTap: () =&gt; onTapped(book),
+            )
+        ],
+      ),
+    );
+  }
+}
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">BookDetailsScreen</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">StatelessWidget</span> </span>{
+  <span class="hljs-keyword">final</span> Book book;
+
+  BookDetailsScreen({
+    <span class="hljs-meta">@required</span> <span class="hljs-keyword">this</span>.book,
+  });
+
+  <span class="hljs-meta">@override</span>
+  Widget build(BuildContext context) {
+    <span class="hljs-keyword">return</span> Scaffold(
+      appBar: AppBar(),
+      body: Padding(
+        padding: <span class="hljs-keyword">const</span> EdgeInsets.all(<span class="hljs-number">8.0</span>),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            <span class="hljs-keyword">if</span> (book != <span class="hljs-keyword">null</span>) ...[
+              Text(book.title, style: Theme.of(context).textTheme.headline6),
+              Text(book.author, style: Theme.of(context).textTheme.subtitle1),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">UnknownScreen</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">StatelessWidget</span> </span>{
+  <span class="hljs-meta">@override</span>
+  Widget build(BuildContext context) {
+    <span class="hljs-keyword">return</span> Scaffold(
+      appBar: AppBar(),
+      body: Center(
+        child: Text(<span class="hljs-string">&#x27;404!&#x27;</span>),
+      ),
+    );
+  }
+}
+</div></code></pre>
+<p>Ejecutando este ejemplo en Chrome ahora muestra las rutas a medida que se navega por ellas, y navega a la página correcta cuando la URL se edita manualmente.</p>
+<h3 id="transitiondelegate">TransitionDelegate</h3>
+<p>Puede proporcionar una implementación personalizada de <code>TransitionDelegate</code> que personalice la forma en que las rutas aparecen (o desaparecen) de la pantalla cuando la lista de páginas cambia. Si necesitas personalizar esto, sigue leyendo, pero si estás contento con el comportamiento predeterminado puedes saltarte esta sección.</p>
+<p>Proporcione un <code>TransitionDelegate</code> a un <code>Navigator</code> que defina el comportamiento deseado:</p>
+<pre><code class="language-dart"><div><span class="hljs-comment">// New:</span>
+TransitionDelegate transitionDelegate = NoAnimationTransitionDelegate();
+
+    child: Navigator(
+        key: navigatorKey,
+        <span class="hljs-comment">// New:</span>
+        transitionDelegate: transitionDelegate,
+</div></code></pre>
+<p>Por ejemplo, la siguiente implementación desactiva todas las animaciones de transición:</p>
+<pre><code class="language-dart"><div><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">NoAnimationTransitionDelegate</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">TransitionDelegate</span>&lt;<span class="hljs-title">void</span>&gt; </span>{
+  <span class="hljs-meta">@override</span>
+  <span class="hljs-built_in">Iterable</span>&lt;RouteTransitionRecord&gt; resolve({
+    <span class="hljs-built_in">List</span>&lt;RouteTransitionRecord&gt; newPageRouteHistory,
+    <span class="hljs-built_in">Map</span>&lt;RouteTransitionRecord, RouteTransitionRecord&gt;
+        locationToExitingPageRoute,
+    <span class="hljs-built_in">Map</span>&lt;RouteTransitionRecord, <span class="hljs-built_in">List</span>&lt;RouteTransitionRecord&gt;&gt;
+        pageRouteToPagelessRoutes,
+  }) {
+    <span class="hljs-keyword">final</span> results = &lt;RouteTransitionRecord&gt;[];
+
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">final</span> pageRoute <span class="hljs-keyword">in</span> newPageRouteHistory) {
+      <span class="hljs-keyword">if</span> (pageRoute.isWaitingForEnteringDecision) {
+        pageRoute.markForAdd();
+      }
+      results.add(pageRoute);
+    }
+
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">final</span> exitingPageRoute <span class="hljs-keyword">in</span> locationToExitingPageRoute.values) {
+      <span class="hljs-keyword">if</span> (exitingPageRoute.isWaitingForExitingDecision) {
+        exitingPageRoute.markForRemove();
+        <span class="hljs-keyword">final</span> pagelessRoutes = pageRouteToPagelessRoutes[exitingPageRoute];
+        <span class="hljs-keyword">if</span> (pagelessRoutes != <span class="hljs-keyword">null</span>) {
+          <span class="hljs-keyword">for</span> (<span class="hljs-keyword">final</span> pagelessRoute <span class="hljs-keyword">in</span> pagelessRoutes) {
+            pagelessRoute.markForRemove();
+          }
+        }
+      }
+
+      results.add(exitingPageRoute);
+    }
+    <span class="hljs-keyword">return</span> results;
+  }
+}
+</div></code></pre>
+<p>Esta implementación personalizada hace <em>override</em> de <code>resolve()</code>, que se encarga de marcar las distintas rutas como <em>pushed</em>, <em>popped</em>, <em>added</em>, <em>completed</em>, o <em>removed</em>:</p>
+<ul>
+<li>
+<p><code>markForPush</code> - muestra la ruta con una transición animada</p>
+</li>
+<li>
+<p><code>markForAdd</code> - muestra la ruta sin una transición animada</p>
+</li>
+<li>
+<p><code>markForPop</code> - elimina la ruta con una transición animada y la completa con un resultado. &quot;<em>Completing</em>&quot; en este contexto significa que el objeto resultante se pasa al callback <code>onPopPage</code> en <code>AppRouterDelegate</code>.</p>
+</li>
+<li>
+<p><code>markForComplete</code> - elimina la ruta sin una transición y la completa con un resultado</p>
+</li>
+<li>
+<p><code>markForRemove</code> - elimina la ruta sin transición animada y sin completar.</p>
+</li>
+</ul>
+<p>Esta clase sólo afecta a la API declarativa, por lo que el botón <em>back</em> sigue mostrando una animación de transición.</p>
+<p><strong>Cómo funciona este ejemplo</strong>: Este ejemplo mira tanto las nuevas rutas como las rutas que salen de la pantalla. Pasa por todos los objetos de <code>newPageRouteHistory</code> y los marca como added sin una animación de transición usando <code>markForAdd</code>. Luego, hace un bucle a través de los valores del mapa <code>locationToExitingPageRoute</code>. Si encuentra una ruta marcada como <code>isWaitingForExitingDecision</code>, entonces llama a <code>markForRemove</code> para indicar que la ruta debe ser removed sin una transición y sin completar.</p>
+<p>Aquí está la muestra completa(Gist).</p>
+<h3 id="rutas-anidadas">Rutas anidadas</h3>
+<p>Esta demostración más grande muestra cómo agregar un <code>Router</code> dentro de otro <code>Router</code>. Muchas aplicaciones requieren rutas para los destinos en un <code>BotomAppBar</code>, y rutas para un stack de vistas por encima de él, lo que requiere dos <code>Navigator</code>. Para ello, la aplicación utiliza un objeto de estado de aplicación para almacenar el estado de navegación específico de la aplicación (el menu index y el objeto <code>Book</code> seleccionados). Este ejemplo también muestra cómo configurar qué <code>Router</code> maneje el botón de retorno.</p>
+<p>Ejemplo de enrutador anidado(Gist)</p>
+<h2 id="qué-es-lo-siguiente">¿Qué es lo siguiente?</h2>
+<p>Este artículo exploró cómo utilizar estas API para una aplicación específica, pero también podría utilizarse para contruir un paquete de API de nivel superior. Esperamos que te unas a nosotros para explorar lo que una API de nivel superior construida sobre estas características puede hacer por los usuarios.</p>
+
+    </body>
+    </html>
