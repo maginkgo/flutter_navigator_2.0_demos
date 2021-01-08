@@ -209,6 +209,8 @@ Aquí hay un ejemplo de cómo estas piezas interactúan:
 
 Esta sección te lleva a través de un ejercicio que utiliza la API Navigator 2.0. Terminaremos con una aplicación que puede estar sincronizada con la barra de URL, y manejar las pulsaciones del botón de regreso desde la aplicación y el navegador, como se muestra en el siguiente GIF:
 
+[GIF DEMO NAVIGATOR 2.0](https://miro.medium.com/max/700/1*PYHrYurwAGyQC8vsnAaWiA.gif)
+
 Para continuar, cambia a master channel, crea un nuevo proyecto Fluter con soporte web, y reemplaza el contenido de `lib/main.dart` con lo siguiente:
 
 ```dart
