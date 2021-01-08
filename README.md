@@ -11,7 +11,6 @@ El `Router` proporciona la capacidad de manejar las rutas desde la plataforma su
 Este artículo te ayuda a elegir qué patrón de `Navigator` funciona mejor para tu aplicación, y explica cómo usar Navigator 2.0 para parsear los URLs del navegador y tomar el control total sobre el stack de las páginas que están activas. El ejercicio de este artículo muestra cómo construir una aplicación que maneja rutas entrantes de la plataforma y administra las páginas de su aplicación. El siguiente GIF muestra la aplicación de ejemplo en acción:
 
 [Demo](https://miro.medium.com/max/2400/1*PYHrYurwAGyQC8vsnAaWiA.gif)
-
 ## Navigator 1.0
 
 Si estás usando Flutter, probablemente estás usando el `Navigator` y estás familiarizado con los siguientes conceptos:
