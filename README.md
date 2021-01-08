@@ -1,12 +1,16 @@
 # Aprendiendo el nuevo sistema de navegación y enrutamiento de Flutter
 
+> Artículo original: [Learning Flutter’s new navigation and routing system](https://medium.com/flutter/learning-flutters-new-navigation-and-routing-system-7c9068155ade)
+
 Este artículo explica cómo funciona la nueva API de `Navigator` y `Router` en Flutter. Si sigues los [documentos de diseño](https://docs.google.com/document/d/139AXLIeY_PTPW1ETpSlJRiCZIJWERN_UTuQM9XwrBCk/edit?usp=sharing) de Flutter, puede que hayas visto estas nuevas funciones denominadas **Navigator 2.0** y **Router**. Exploraremos cómo estas API permiten un control más preciso de las pantallas de tu aplicación y cómo puedes utilizarlas para parsear las rutas.
 
-Estas nuevas APIs no son *breaking changes*, simplemente añaden una nueva API declarativa. Antes de Navigator 2.0, era difícil *pushear* o *poppear* múltiples páginas, o eliminar una página debajo de la actual. Sin embargo, si estás contento con el funcionamiento actual de `Navigator`, puedes seguir usándolo de la misma manera (imperativa).
+Estas nuevas APIs no son *breaking changes*, simplemente añaden una nueva [API declarativa](https://flutter.dev/docs/get-started/flutter-for/declarative). Antes de Navigator 2.0, [era difícil *pushear* o *poppear* múltiples páginas](https://github.com/flutter/flutter/issues/12146), o eliminar una página debajo de la actual. Sin embargo, si estás contento con el funcionamiento actual de `Navigator`, puedes seguir usándolo de la misma manera (imperativa).
 
 El `Router` proporciona la capacidad de manejar las rutas desde la plataforma subyacente y mostrar las páginas apropiadas. En este artículo, el `Router` está configurado para parsear la URL del navegador para mostrar la página apropiada.
 
 Este artículo te ayuda a elegir qué patrón de `Navigator` funciona mejor para tu aplicación, y explica cómo usar Navigator 2.0 para parsear los URLs del navegador y tomar el control total sobre el stack de las páginas que están activas. El ejercicio de este artículo muestra cómo construir una aplicación que maneja rutas entrantes de la plataforma y administra las páginas de su aplicación. El siguiente GIF muestra la aplicación de ejemplo en acción:
+
+![alt](https://miro.medium.com/max/700/1*PYHrYurwAGyQC8vsnAaWiA.gif)
 
 ## Navigator 1.0
 
@@ -24,7 +28,65 @@ La mayoría de las aplicaciones para móviles muestran las pantallas una encima 
 
 `MaterialApp` y `CupertinoApp` ya utilizan un `Navigator` por debajo. Puede acceder al navegador utilizando `Navigator.of()` o mostrar una nueva pantalla utilizando `Navigator.push()`, y volver a la pantalla anterior con `Navigator.pop()`:
 
+```dart
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(Nav2App());
+}
+
+class Nav2App extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: HomeScreen(),
+    );
+  }
+}
+
+class HomeScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(),
+      body: Center(
+        child: FlatButton(
+          child: Text('View Details'),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) {
+                return DetailScreen();
+              }),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class DetailScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(),
+      body: Center(
+        child: FlatButton(
+          child: Text('Pop!'),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+      ),
+    );
+  }
+}
+```
+
 Cuando se llama a `push()`, el widget `DetailScreen` se coloca encima del widget `HomeScreen` de esta manera:
+
+![alt](https://miro.medium.com/max/412/1*v77nG0BRIWrOghj8fCq_EA.png)
 
 La pantalla anterior (`HomeScreen`) sigue siendo parte del árbol de widgets, por lo que cualquier objeto `State` asociado a él permanece activo mientras `DetailScreen` es visible.
 
@@ -32,13 +94,87 @@ La pantalla anterior (`HomeScreen`) sigue siendo parte del árbol de widgets, po
 
 Flutter también soporta rutas con nombre, que se definen en el parámetro `routes` en `MaterialApp` o `CupertinoApp`:
 
+```dart
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(Nav2App());
+}
+
+class Nav2App extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      routes: {
+        '/': (context) => HomeScreen(),
+        '/details': (context) => DetailScreen(),
+      },
+    );
+  }
+}
+
+class HomeScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(),
+      body: Center(
+        child: FlatButton(
+          child: Text('View Details'),
+          onPressed: () {
+            Navigator.pushNamed(
+              context,
+              '/details',
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class DetailScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(),
+      body: Center(
+        child: FlatButton(
+          child: Text('Pop!'),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+      ),
+    );
+  }
+}
+```
+
 Estas rutas deben ser predefinidas. Aunque se pueden pasar argumentos a una ruta con nombre, no se pueden parsear los argumentos de la propia ruta. Por ejemplo, si la aplicación se ejecuta en la web, no puedes parsear el ID de una ruta como `/details/:id`.
 
 ### Rutas con nombre avanzadas con onGenerateRoute
 
 Una forma más flexible de manejar las rutas con nombre es usando `onGenerateRoute`. Esta API te da la capacidad de manejar todas las rutas:
 
-Aquí está el ejemplo completo:
+```dart
+onGenerateRoute: (settings) {
+  // Handle '/'
+  if (settings.name == '/') {
+    return MaterialPageRoute(builder: (context) => HomeScreen());
+  }
+  
+  // Handle '/details/:id'
+  var uri = Uri.parse(settings.name);
+  if (uri.pathSegments.length == 2 &&
+      uri.pathSegments.first == 'details') {
+    var id = uri.pathSegments[1];
+    return MaterialPageRoute(builder: (context) => DetailScreen(id: id));
+  }
+  
+  return MaterialPageRoute(builder: (context) => UnknownScreen());
+},
+```
 
 Aquí, la configuración es una instancia de `RouteSetings`. Los campos `name` y `arguments` son los valores que se proporcionaron cuando se llamó `Navigator.pushNamed`, o lo que `initialRute` establece.
 
