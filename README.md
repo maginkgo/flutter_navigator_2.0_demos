@@ -193,6 +193,8 @@ La API de Navigator 2.0 añade nuevas clases al famework para hacer que las pant
 
 El siguiente diagrama muestra cómo interactua `RouterDelegate`, `Router`, `RouteInformationParser`, y el estado de la aplicación:
 
+![text](https://miro.medium.com/max/2400/1*hNt4Bc8FZBp_Gqh7iED3FA.png)
+
 Aquí hay un ejemplo de cómo estas piezas interactúan:
 
 1. Cuando la plataforma emite una nueva ruta (por ejemplo, "`books/2`") , el `RouteInformationParser` lo convierte en un tipo de datos abstractos `T` que define en su aplicación (por ejemplo, una clase llamada `BooksRoutePath`).
