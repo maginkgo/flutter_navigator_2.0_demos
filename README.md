@@ -1,6 +1,6 @@
 # Aprendiendo el nuevo sistema de navegación y enrutamiento de Flutter
 
-Este artículo explica cómo funciona la nueva API de `Navigator` y `Router` en Flutter. Si sigues los documentos de diseño de Flutter, puede que hayas visto estas nuevas funciones denominadas **Navigator 2.0** y **Router**. Exploraremos cómo estas API permiten un control más preciso de las pantallas de tu aplicación y cómo puedes utilizarlas para parsear las rutas.
+Este artículo explica cómo funciona la nueva API de `Navigator` y `Router` en Flutter. Si sigues los [documentos de diseño](https://docs.google.com/document/d/139AXLIeY_PTPW1ETpSlJRiCZIJWERN_UTuQM9XwrBCk/edit?usp=sharing) de Flutter, puede que hayas visto estas nuevas funciones denominadas **Navigator 2.0** y **Router**. Exploraremos cómo estas API permiten un control más preciso de las pantallas de tu aplicación y cómo puedes utilizarlas para parsear las rutas.
 
 Estas nuevas APIs no son *breaking changes*, simplemente añaden una nueva API declarativa. Antes de Navigator 2.0, era difícil *pushear* o *poppear* múltiples páginas, o eliminar una página debajo de la actual. Sin embargo, si estás contento con el funcionamiento actual de `Navigator`, puedes seguir usándolo de la misma manera (imperativa).
 
